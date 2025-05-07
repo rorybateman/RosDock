@@ -26,10 +26,11 @@ RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && \
     rosdep install --from-paths src --ignore-src -y && \
     colcon build"
 
-FROM ubuntu:latest
-    COPY agentbuild.sh /home/rory/code/docker/agaentbuild.sh 
-    RUN chmod +x /home/rory/code/docker/agentbuild.sh
-    CMD ["/home/rory/code/docker/agentbuild.sh"]
+RUN /bin/bash -c "git clone https://github.com/rorybateman/RosDock.git &&\
+    cd RosDock && \
+    chmod +x /RosDock/agentbuild.sh && \
+    /RosDock/agentbuild.sh"
+
     
 
 

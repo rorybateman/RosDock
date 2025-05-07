@@ -1,4 +1,4 @@
-source install/local_setup.bash
+source /micro_ws/install/local_setup.bash
 
 ros2 run micro_ros_setup create_agent_ws.sh
 
