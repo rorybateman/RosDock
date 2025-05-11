@@ -31,10 +31,7 @@ RUN /bin/bash -c " # Source the ROS 2 installation &&\
     # Build micro-ROS tools and source them
     colcon build"
 
-RUN /bin/bash -c "git clone https://github.com/rorybateman/RosDock.git &&\
-    cd RosDock && \
-    chmod +x /RosDock/agentbuild.sh && \
-    /RosDock/agentbuild.sh"
+RUN /bin/bash -c "git clone https://github.com/rorybateman/RosDock.git && cd RosDock && chmod +x agentbuild.sh"
 
     
 
