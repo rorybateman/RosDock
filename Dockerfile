@@ -16,6 +16,21 @@ RUN apt-get update && \
 # Install rosdep using pip
 RUN pip3 install -U rosdep 
 
+
+RUN /bin/bash -c " # Source the ROS 2 installation &&\
+    source /opt/ros/foxy/setup.bash &&\
+    # Create a workspace and download the micro-ROS tools
+    mkdir microros_ws &&\
+    cd microros_ws &&\
+    git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup &&\
+    # Update dependencies using rosdep
+    sudo apt update && rosdep update &&\
+    rosdep install --from-paths src --ignore-src -y &&\
+    # Install pip
+    sudo apt-get install python3-pip &&\
+    # Build micro-ROS tools and source them
+    colcon build"
+
 RUN /bin/bash -c "git clone https://github.com/rorybateman/RosDock.git &&\
     cd RosDock && \
     chmod +x /RosDock/agentbuild.sh && \
