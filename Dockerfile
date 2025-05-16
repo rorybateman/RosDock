@@ -1,38 +1,72 @@
 FROM osrf/ros:foxy-desktop
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV ROS_DISTRO=foxy
+ENV DEBIAN_FRONTEND=noninteractive \
+    ROS_DISTRO=foxy \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    python3-pip \
+# Install required tools and dependencies
+RUN apt-get update && apt-get install -y \
     git \
-    build-essential \
-    python3-colcon-common-extensions \
+    curl \
+    gnupg2 \
+    lsb-release \
+    software-properties-common \
+    clang-tidy \
+    clang-10 \
+    clang-tools-10 \
+    llvm-10 \
+    llvm-10-dev \
+    binfmt-support \
+    libc6-dev \
+    libc6-i386 \
+    lib32gcc-s1 \
+    lib32stdc++6 \
+    libclang-common-10-dev \
+    libclang-cpp10 \
+    libgc1c2 \
+    libobjc-9-dev \
+    libomp-10-dev \
+    libomp5-10 \
+    libpfm4 \
+    libpipeline1 \
+    libz3-dev \
+    libz3-4 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install rosdep using pip
-RUN pip3 install -U rosdep 
+# Install required system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    git \
+    python3-pip \
+    python3-colcon-common-extensions 
+
+# Upgrade pip tools and install rosdep
+RUN pip3 uninstall -y importlib_metadata || true && \
+    pip3 install --upgrade pip && \
+    pip3 install 'setuptools<60' && \
+    pip3 install -U rosdep
 
 
-RUN /bin/bash -c " # Source the ROS 2 installation &&\
-    source /opt/ros/foxy/setup.bash &&\
-    # Create a workspace and download the micro-ROS tools
-    mkdir microros_ws &&\
-    cd microros_ws &&\
-    git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup &&\
-    # Update dependencies using rosdep
-    sudo apt update && rosdep update &&\
-    rosdep install --from-paths src --ignore-src -y &&\
-    # Install pip
-    sudo apt-get install python3-pip &&\
-    # Build micro-ROS tools and source them
-    colcon build"
+# Initialize rosdep
+RUN rosdep update
 
-RUN /bin/bash -c "git clone https://github.com/rorybateman/RosDock.git && cd RosDock && chmod +x agaentbuild.sh"
+# Set up micro-ROS workspace
+RUN mkdir -p /microros_ws/src && \
+    git clone -b ${ROS_DISTRO} https://github.com/micro-ROS/micro_ros_setup.git /microros_ws/src/micro_ros_setup
 
-    
+# Install micro-ROS dependencies
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    cd /microros_ws && \
+    rosdep install --from-paths src --ignore-src -y --skip-keys=' libasio-dev clang-tidy'"
 
+# Build micro-ROS workspace
+WORKDIR /microros_ws
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && colcon build"
 
+# Entrypoint
+COPY ros_entrypoint.sh /ros_entrypoint.sh
+RUN chmod +x /ros_entrypoint.sh
+ENTRYPOINT ["/ros_entrypoint.sh"]
+
+CMD ["bash"]
